@@ -30,3 +30,8 @@ resourcecontainers
 | union (resources | project name,type,location,subscriptionId,tags)
 ```
 
+### Query resources for a specific `publicIPAddress`
+``` kql
+Resources
+| where type contains 'publicIPAddresses' and properties.ipAddress == "12.345.678.910"
+```
