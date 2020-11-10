@@ -35,3 +35,28 @@ resourcecontainers
 Resources
 | where type contains 'publicIPAddresses' and properties.ipAddress == "12.345.678.910"
 ```
+
+### Query `load balancers` that are `Standard` SKU
+``` kql
+resources
+| where type == "microsoft.network/loadbalancers" and sku.name == "Standard"
+```
+
+### Query `sql databases` that do not contain the name `Master`
+``` kql
+resources
+| where type == "microsoft.sql/servers/databases" and name notcontains "master"
+```
+
+### Query `virtual network gateways` that are `ExpressRoute` type
+``` kql
+resources
+| where type == "microsoft.network/virtualnetworkgateways" and properties.gatewayType == "ExpressRoute"
+```
+
+### Query `network connections` that are `ExpressRoute` type
+``` kql
+resources
+| where type == "microsoft.network/connections" and properties.connectionType == "ExpressRoute"
+```
+
