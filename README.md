@@ -60,3 +60,15 @@ resources
 | where type == "microsoft.network/connections" and properties.connectionType == "ExpressRoute"
 ```
 
+### Count `numberOfWorkers` for `web server farms`
+```kql
+resources
+| where type == "microsoft.web/serverfarms"
+| summarize count () by tostring(properties.numberOfWorkers)
+```
+
+### Query `web sites` that are not `functionapp`
+```kql
+resources
+| where type == "microsoft.web/sites" and kind notcontains "functionapp"
+```
