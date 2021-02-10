@@ -4,6 +4,14 @@
 * [Graph Query Language](https://docs.microsoft.com/en-us/azure/governance/resource-graph/concepts/query-language)
 * [Kusto Overview](https://docs.microsoft.com/en-us/azure/data-explorer/kusto/query/)
 
+
+### Count `all resources` summarizing by `count` and ordering by `count`
+```kql
+Resources
+| summarize count() by type 
+| order by count_
+```
+
 ### Count `resource groups` missing the `costcentre` tag
 ```kql
 resourcecontainers
