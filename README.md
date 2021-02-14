@@ -80,3 +80,22 @@ resources
 resources
 | where type == "microsoft.web/sites" and kind notcontains "functionapp"
 ```
+
+### Query `network security groups` expanding `securityRules`
+```kql
+Resources
+| where type =~ "microsoft.network/networksecuritygroups"
+| join kind=leftouter (ResourceContainers | where type=='microsoft.resources/subscriptions' | project SubcriptionName=name, subscriptionId) on subscriptionId
+| mv-expand rules=properties.securityRules
+| extend direction = tostring(rules.properties.direction)
+| extend priority = toint(rules.properties.priority)
+| extend access = rules.properties.access
+| extend description = rules.properties.description
+| extend destprefix = rules.properties.destinationAddressPrefix
+| extend destport = rules.properties.destinationPortRange
+| extend sourceprefix = rules.properties.sourceAddressPrefix
+| extend sourceport = rules.properties.sourcePortRange
+| extend subnet_name = split((split(tostring(properties.subnets), '/'))[10], '"')[0]
+| project SubcriptionName, resourceGroup, subnet_name, name, direction, access, priority, sourceport, sourceprefix, destport, destprefix, description
+| sort by SubcriptionName, resourceGroup asc, name, direction asc, priority asc
+```
