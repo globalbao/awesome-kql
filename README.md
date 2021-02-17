@@ -5,6 +5,13 @@
 * [Kusto Overview](https://docs.microsoft.com/en-us/azure/data-explorer/kusto/query/)
 
 
+### Query `virtual machines` and return `VM size`
+```kql
+Resources
+| where type =~ 'Microsoft.Compute/virtualMachines'
+| project vmName = name, vmSize=tostring(properties.hardwareProfile.vmSize), vmId = id
+```
+
 ### Count `all resources` summarizing by `count` and ordering by `count`
 ```kql
 Resources
