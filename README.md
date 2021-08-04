@@ -106,3 +106,12 @@ Resources
 | project SubcriptionName, resourceGroup, subnet_name, name, direction, access, priority, sourceport, sourceprefix, destport, destprefix, description
 | sort by SubcriptionName, resourceGroup asc, name, direction asc, priority asc
 ```
+
+### Query `Free Space` from `Perf` table and summarize results by `TimeGenerated`
+```kql
+Perf
+| where CounterName contains_cs "Free Space" and InstanceName != "_Total"
+| summarize arg_max(TimeGenerated, *) by Computer,InstanceName
+| project Computer, InstanceName, CounterName, CounterValue
+```
+
