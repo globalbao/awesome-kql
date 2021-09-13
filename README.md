@@ -94,6 +94,7 @@ Resources
 | where type =~ "microsoft.network/networksecuritygroups"
 | join kind=leftouter (ResourceContainers | where type=='microsoft.resources/subscriptions' | project SubcriptionName=name, subscriptionId) on subscriptionId
 | mv-expand rules=properties.securityRules
+| extend rule_name = tostring(rules.name)
 | extend direction = tostring(rules.properties.direction)
 | extend priority = toint(rules.properties.priority)
 | extend access = rules.properties.access
@@ -102,16 +103,9 @@ Resources
 | extend destport = rules.properties.destinationPortRange
 | extend sourceprefix = rules.properties.sourceAddressPrefix
 | extend sourceport = rules.properties.sourcePortRange
+| extend sourceApplicationSecurityGroups = split((split(tostring(rules.properties.sourceApplicationSecurityGroups), '/'))[8], '"')[0]
+| extend destinationApplicationSecurityGroups = split((split(tostring(rules.properties.destinationApplicationSecurityGroups), '/'))[8], '"')[0]
 | extend subnet_name = split((split(tostring(properties.subnets), '/'))[10], '"')[0]
-| project SubcriptionName, resourceGroup, subnet_name, name, direction, access, priority, sourceport, sourceprefix, destport, destprefix, description
-| sort by SubcriptionName, resourceGroup asc, name, direction asc, priority asc
+| project SubcriptionName, resourceGroup, subnet_name, name, rule_name, direction, access, priority, sourceport, sourceprefix, sourceApplicationSecurityGroups, destport, destprefix, destinationApplicationSecurityGroups, description
+| sort by SubcriptionName, resourceGroup asc, name asc, direction asc, priority asc
 ```
-
-### Query `Free Space` from `Perf` table and summarize results by `TimeGenerated`
-```kql
-Perf
-| where CounterName contains_cs "Free Space" and InstanceName != "_Total"
-| summarize arg_max(TimeGenerated, *) by Computer,InstanceName
-| project Computer, InstanceName, CounterName, CounterValue
-```
-
