@@ -88,7 +88,7 @@ resources
 | where type == "microsoft.web/sites" and kind notcontains "functionapp"
 ```
 
-### Query `network security groups` expanding `securityRules`
+### Query `network security groups` across all subscriptions expanding `securityRules`
 ```kql
 Resources
 | where type =~ "microsoft.network/networksecuritygroups"
@@ -99,13 +99,14 @@ Resources
 | extend priority = toint(rules.properties.priority)
 | extend access = rules.properties.access
 | extend description = rules.properties.description
-| extend destprefix = rules.properties.destinationAddressPrefix
-| extend destport = rules.properties.destinationPortRange
+| extend protocol = rules.properties.protocol
 | extend sourceprefix = rules.properties.sourceAddressPrefix
 | extend sourceport = rules.properties.sourcePortRange
 | extend sourceApplicationSecurityGroups = split((split(tostring(rules.properties.sourceApplicationSecurityGroups), '/'))[8], '"')[0]
+| extend destprefix = rules.properties.destinationAddressPrefix
+| extend destport = rules.properties.destinationPortRange
 | extend destinationApplicationSecurityGroups = split((split(tostring(rules.properties.destinationApplicationSecurityGroups), '/'))[8], '"')[0]
 | extend subnet_name = split((split(tostring(properties.subnets), '/'))[10], '"')[0]
-| project SubcriptionName, resourceGroup, subnet_name, name, rule_name, direction, access, priority, sourceport, sourceprefix, sourceApplicationSecurityGroups, destport, destprefix, destinationApplicationSecurityGroups, description
-| sort by SubcriptionName, resourceGroup asc, name asc, direction asc, priority asc
+| project SubcriptionName, resourceGroup, subnet_name, name, rule_name, direction, priority, access, description, protocol, sourceport, sourceprefix, sourceApplicationSecurityGroups, destport, destprefix, destinationApplicationSecurityGroups
+| sort by SubcriptionName, resourceGroup, name asc, direction asc, priority asc
 ```
