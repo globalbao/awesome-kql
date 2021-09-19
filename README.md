@@ -1,12 +1,19 @@
 # Azure Resource Graph KQL queries
+
+Get in touch :octocat:
+
+* Twitter: [@coder_au](https://twitter.com/coder_au)
+* LinkedIn: [@JesseLoudon](https://www.linkedin.com/in/jesseloudon/)
+* Web: [jloudon.com](https://jloudon.com)
+* GitHub: [@JesseLoudon](https://github.com/jesseloudon)
+
+## Azure Portal KQL
 * [What is Azure Resource Graph?](https://docs.microsoft.com/en-us/azure/governance/resource-graph/overview)
 * [Starter Resource Graph query samples](https://docs.microsoft.com/en-us/azure/governance/resource-graph/samples/starter?tabs=azure-cli)
 * [Graph Query Language](https://docs.microsoft.com/en-us/azure/governance/resource-graph/concepts/query-language)
 * [Kusto Overview](https://docs.microsoft.com/en-us/azure/data-explorer/kusto/query/)
 
-## Azure Portal KQL
-
-### All Resources
+### :star: All Resources
 
 #### Count `all resources` summarizing by `count` and ordering by `count`
 ```kql
@@ -15,7 +22,7 @@ Resources
 | order by count_
 ```
 
-### Resource Groups
+### :star: Resource Groups
 
 #### Count `resource groups` missing the `costcentre` tag
 ```kql
@@ -43,7 +50,7 @@ resourcecontainers
 | union (resources | project name,type,location,subscriptionId,tags)
 ```
 
-## Virtual Machines
+## :star: Virtual Machines
 
 ### Query `virtual machines` and return `VM size`
 ```kql
@@ -52,7 +59,7 @@ Resources
 | project vmName = name, vmSize=tostring(properties.hardwareProfile.vmSize), vmId = id
 ```
 
-## Public IP Addresses
+## :star: Public IP Addresses
 
 ### Query resources for a specific `publicIPAddress`
 ``` kql
@@ -60,7 +67,7 @@ Resources
 | where type contains 'publicIPAddresses' and properties.ipAddress == "12.345.678.910"
 ```
 
-## Load Balancers
+## :star: Load Balancers
 
 ### Query `load balancers` that are `Standard` SKU
 ``` kql
@@ -68,7 +75,7 @@ resources
 | where type == "microsoft.network/loadbalancers" and sku.name == "Standard"
 ```
 
-## SQL Databases
+## :star: SQL Databases
 
 ### Query `sql databases` that do not contain the name `Master`
 ``` kql
@@ -76,7 +83,7 @@ resources
 | where type == "microsoft.sql/servers/databases" and name notcontains "master"
 ```
 
-## ExpressRoute
+## :star: ExpressRoute
 
 ### Query `virtual network gateways` that are `ExpressRoute` type
 ``` kql
@@ -90,7 +97,7 @@ resources
 | where type == "microsoft.network/connections" and properties.connectionType == "ExpressRoute"
 ```
 
-## Web Server Farms / App Services
+## :star: Web Server Farms / App Services
 
 ### Count `numberOfWorkers` for `web server farms`
 ```kql
@@ -105,7 +112,7 @@ resources
 | where type == "microsoft.web/sites" and kind notcontains "functionapp"
 ```
 
-## Network Security Group Rules
+## :star: Network Security Group Rules
 
 ### Query `network security groups` across all subscriptions expanding `securityRules`
 ```kql
@@ -133,7 +140,7 @@ Resources
 ## PowerShell KQL
 * [Run your first Resource Graph query using Azure PowerShell](https://docs.microsoft.com/en-us/azure/governance/resource-graph/first-query-powershell)
 
-### AzGraph Queries w/ export to JSON
+### :star: AzGraph Queries w/ export to JSON
 
 * resource groups
 * virtual networks
@@ -211,10 +218,3 @@ $webSites = Search-AzGraph -Query "Resources | where type == 'microsoft.web/site
 
 $notificationHubs = Search-AzGraph -Query "Resources | where type == 'microsoft.notificationhubs/namespaces/notificationhubs' or type == 'microsoft.notificationhubs/namespaces' | project-away managedBy,tenantId,zones,extendedLocation,plan,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\NotificationHubs.json
 ```
-
-Get in touch :octocat:
-
-* Twitter: [@coder_au](https://twitter.com/coder_au)
-* LinkedIn: [@JesseLoudon](https://www.linkedin.com/in/jesseloudon/)
-* Web: [jloudon.com](https://jloudon.com)
-* GitHub: [@JesseLoudon](https://github.com/jesseloudon)
