@@ -172,6 +172,7 @@ Install-Module -Name Az.ResourceGraph
 # Set a local File Path for JSON export
 $FilePath = "C:\Temp\"
 
+# Query resources, project away columns, and convert/export to JSON
 $resourceGroups = Search-AzGraph -Query "ResourceContainers | project-away resourceGroup,managedBy,tenantId,identity,zones,extendedLocation,sku,plan,properties,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\ResourceGroups.json
 
 $virtualNetworks = Search-AzGraph -Query "Resources | where type == 'microsoft.network/virtualnetworks' | project-away managedBy,tenantId,identity,zones,extendedLocation,sku,plan,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\VirtualNetworks.json
