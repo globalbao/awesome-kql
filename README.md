@@ -13,6 +13,16 @@ Get in touch :octocat:
 * [Graph Query Language](https://docs.microsoft.com/en-us/azure/governance/resource-graph/concepts/query-language)
 * [Kusto Overview](https://docs.microsoft.com/en-us/azure/data-explorer/kusto/query/)
 
+**Current Scope:**
+* resource groups
+* virtual machines
+* public ip addresses
+* load balancers
+* sql databases
+* expressroute
+* web server farms / app services
+* network security group rules
+
 ### :star: All Resources
 
 #### Count `all resources` summarizing by `count` and ordering by `count`
@@ -142,6 +152,7 @@ Resources
 
 ### :star: AzGraph Queries w/ export to JSON
 
+**Current Scope:**
 * resource groups
 * virtual networks
 * redis cache
