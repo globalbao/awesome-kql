@@ -61,6 +61,21 @@ resourcecontainers
 | union (resources | project name,type,location,subscriptionId,tags)
 ```
 
+#### Query all tags for `resource groups` and `resources` and expand tag names/values to individual rows
+```kql
+resourcecontainers
+| where type == "microsoft.resources/subscriptions/resourcegroups"
+| mvexpand parsejson(tags)
+| extend tagname = tostring(bag_keys(tags)[0])
+| extend tagvalue = tostring(tags[tagname])
+| project  name,id,type,location,subscriptionId,tagname,tagvalue
+| union (resources 
+| mvexpand parsejson(tags)
+| extend tagname = tostring(bag_keys(tags)[0])
+| extend tagvalue = tostring(tags[tagname])
+| project name,id,type,location,subscriptionId,tagname,tagvalue)
+```
+
 ## :star: Virtual Machines
 
 ### Query `virtual machines` and return `VM size`
