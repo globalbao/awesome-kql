@@ -165,6 +165,35 @@ Resources
 
 ## :star: Azure Policy
 
+### Query `policy states` filtering on `'NonCompliant'` results
+
+```
+policyresources
+| where type == "microsoft.policyinsights/policystates"
+| where properties.complianceState == 'NonCompliant'
+| extend policyAssignmentParameters = todynamic(properties.policyAssignmentParameters)
+| extend policyDefinitionAction = tostring(properties.policyDefinitionAction)
+| extend policyAssignmentScope = tostring(properties.policyAssignmentScope)
+| extend policyAssignmentName = tostring(properties.policyAssignmentName)
+| extend policyDefinitionName = tostring(properties.policyDefinitionName)
+| extend policyDefinitionId = tostring(properties.policyDefinitionId)
+| extend policyAssignmentId = tostring(properties.policyAssignmentId)
+| extend managementGroupIds = tostring(properties.managementGroupIds)
+| extend policyDefinitionReferenceId = tostring(properties.policyDefinitionReferenceId)
+| extend complianceState = tostring(properties.complianceState)
+| extend policySetDefinitionCategory = tostring(properties.policySetDefinitionCategory)
+| extend subscriptionId = tostring(properties.subscriptionId)
+| extend policySetDefinitionName = tostring(properties.policySetDefinitionName)
+| extend policySetDefinitionId = tostring(properties.policySetDefinitionId)
+| extend resourceType = tostring(properties.resourceType)
+| extend policyDefinitionGroupNames = todynamic(properties.policyDefinitionGroupNames)
+| extend stateWeight = toint(properties.stateWeight)
+| extend resourceId = tostring(properties.resourceId)
+| extend isDeleted = tobool(properties.isDeleted)
+| extend timestamp = tostring(properties.timestamp)
+| project timestamp,resourceId,resourceGroup,resourceType,complianceState,stateWeight,policyAssignmentName,policyAssignmentScope,policyAssignmentParameters,policySetDefinitionId,policySetDefinitionName,policySetDefinitionCategory,policyDefinitionId,policyDefinitionName,policyDefinitionAction,policyDefinitionReferenceId,policyDefinitionGroupNames,managementGroupIds,subscriptionId
+```
+
 ### Query `Azure Security Benchmark` compliance across all subscriptions
 
 ```
