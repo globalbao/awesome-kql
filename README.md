@@ -22,6 +22,7 @@ Get in touch :octocat:
 * expressroute
 * web server farms / app services
 * network security group rules
+* security assessments
 * azure policy
 
 ### :star: All Resources
@@ -161,6 +162,23 @@ Resources
 | extend subnet_name = split((split(tostring(properties.subnets), '/'))[10], '"')[0]
 | project SubcriptionName, resourceGroup, subnet_name, name, rule_name, direction, priority, access, description, protocol, sourceport, sourceprefix, sourceApplicationSecurityGroups, destport, destprefix, destinationApplicationSecurityGroups
 | sort by SubcriptionName, resourceGroup, name asc, direction asc, priority asc
+```
+
+## :star: Security Assessments
+
+### Query `microsoft.security/assessments` and show distant values
+
+```
+securityresources
+| where type == "microsoft.security/assessments"
+| extend description = tostring(properties.metadata.description)
+| extend displayName = tostring(properties.displayName)
+| extend severity = tostring(properties.metadata.severity)
+| extend remediationDescription = tostring(properties.metadata.remediationDescription)
+| extend policyDefinitionId = tostring(properties.metadata.policyDefinitionId)
+| extend implementationEffort = tostring(properties.metadata.implementationEffort)
+| extend userImpact = tostring(properties.metadata.userImpact)
+| distinct name, description, displayName, severity, remediationDescription, policyDefinitionId, implementationEffort, userImpact
 ```
 
 ## :star: Azure Policy
