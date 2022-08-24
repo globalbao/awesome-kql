@@ -166,7 +166,7 @@ Resources
 
 ## :star: Security Assessments
 
-### Query `microsoft.security/assessments` and show distant values
+### Query `microsoft.security/assessments` and show distinct values
 
 ```
 securityresources
