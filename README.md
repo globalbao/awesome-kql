@@ -189,26 +189,26 @@ securityresources
 policyresources
 | where type == "microsoft.policyinsights/policystates"
 | where properties.complianceState == 'NonCompliant'
-| extend policyAssignmentParameters = todynamic(properties.policyAssignmentParameters)
-| extend policyDefinitionAction = tostring(properties.policyDefinitionAction)
-| extend policyAssignmentScope = tostring(properties.policyAssignmentScope)
-| extend policyAssignmentName = tostring(properties.policyAssignmentName)
-| extend policyDefinitionName = tostring(properties.policyDefinitionName)
-| extend policyDefinitionId = tostring(properties.policyDefinitionId)
-| extend policyAssignmentId = tostring(properties.policyAssignmentId)
-| extend managementGroupIds = tostring(properties.managementGroupIds)
-| extend policyDefinitionReferenceId = tostring(properties.policyDefinitionReferenceId)
-| extend complianceState = tostring(properties.complianceState)
-| extend policySetDefinitionCategory = tostring(properties.policySetDefinitionCategory)
-| extend subscriptionId = tostring(properties.subscriptionId)
-| extend policySetDefinitionName = tostring(properties.policySetDefinitionName)
-| extend policySetDefinitionId = tostring(properties.policySetDefinitionId)
-| extend resourceType = tostring(properties.resourceType)
-| extend policyDefinitionGroupNames = todynamic(properties.policyDefinitionGroupNames)
-| extend stateWeight = toint(properties.stateWeight)
-| extend resourceId = tostring(properties.resourceId)
-| extend isDeleted = tobool(properties.isDeleted)
-| extend timestamp = tostring(properties.timestamp)
+| extend policyAssignmentParameters = todynamic(properties.policyAssignmentParameters),
+policyDefinitionAction = tostring(properties.policyDefinitionAction),
+policyAssignmentScope = tostring(properties.policyAssignmentScope),
+policyAssignmentName = tostring(properties.policyAssignmentName),
+policyDefinitionName = tostring(properties.policyDefinitionName),
+policyDefinitionId = tostring(properties.policyDefinitionId),
+ policyAssignmentId = tostring(properties.policyAssignmentId),
+managementGroupIds = tostring(properties.managementGroupIds),
+policyDefinitionReferenceId = tostring(properties.policyDefinitionReferenceId),
+complianceState = tostring(properties.complianceState),
+policySetDefinitionCategory = tostring(properties.policySetDefinitionCategory),
+subscriptionId = tostring(properties.subscriptionId),
+policySetDefinitionName = tostring(properties.policySetDefinitionName),
+policySetDefinitionId = tostring(properties.policySetDefinitionId),
+resourceType = tostring(properties.resourceType),
+policyDefinitionGroupNames = todynamic(properties.policyDefinitionGroupNames),
+stateWeight = toint(properties.stateWeight),
+ resourceId = tostring(properties.resourceId),
+isDeleted = tobool(properties.isDeleted),
+timestamp = tostring(properties.timestamp)
 | project timestamp,resourceId,resourceGroup,resourceType,complianceState,stateWeight,policyAssignmentName,policyAssignmentScope,policyAssignmentParameters,policySetDefinitionId,policySetDefinitionName,policySetDefinitionCategory,policyDefinitionId,policyDefinitionName,policyDefinitionAction,policyDefinitionReferenceId,policyDefinitionGroupNames,managementGroupIds,subscriptionId
 ```
 
