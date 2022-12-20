@@ -22,6 +22,7 @@ Get in touch :octocat:
 * expressroute
 * web server farms / app services
 * network security group rules
+* disks
 * security assessments
 * azure policy
 
@@ -162,6 +163,19 @@ Resources
 | extend subnet_name = split((split(tostring(properties.subnets), '/'))[10], '"')[0]
 | project SubcriptionName, resourceGroup, subnet_name, name, rule_name, direction, priority, access, description, protocol, sourceport, sourceprefix, sourceApplicationSecurityGroups, destport, destprefix, destinationApplicationSecurityGroups
 | sort by SubcriptionName, resourceGroup, name asc, direction asc, priority asc
+```
+
+## :star: Disks
+
+### Query `microsoft.compute/disks`
+
+```
+resources
+| where type == "microsoft.compute/disks"
+| extend diskSizeGB = tostring(properties.diskSizeGB)
+| extend timeCreated = tostring(properties.timeCreated)
+| extend diskState = tostring(properties.diskState)
+| project name,type,location,resourceGroup,diskState,diskSizeGB,timeCreated,managedBy
 ```
 
 ## :star: Security Assessments
