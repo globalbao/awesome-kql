@@ -10,7 +10,7 @@ Get in touch :octocat:
 
 # Azure Monitor KQL queries
 
-### :star: All Resources
+### :star: Key Vault
 
 #### Search for expiring Key Vault secrets and calculate Days till Expiry
 ```kql
