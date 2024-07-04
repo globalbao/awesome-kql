@@ -1,4 +1,4 @@
-# Azure Resource Graph KQL queries
+# Awesome KQL
 
 Get in touch :octocat:
 
@@ -6,6 +6,24 @@ Get in touch :octocat:
 * LinkedIn: [@JesseLoudon](https://www.linkedin.com/in/jesseloudon/)
 * Web: [jloudon.com](https://jloudon.com)
 * GitHub: [@JesseLoudon](https://github.com/jesseloudon)
+
+
+# Azure Monitor KQL queries
+
+### :star: All Resources
+
+#### Search for expiring Key Vault secrets and calculate Days till Expiry
+```kql
+AzureDiagnostics
+| where ResourceProvider == 'MICROSOFT.KEYVAULT'
+| where OperationName == 'SecretNearExpiryEventGridNotification'
+| extend SecretExpire = unixtime_seconds_todatetime(eventGridEventProperties_data_EXP_d)
+| extend SecretName = eventGridEventProperties_data_ObjectName_s
+| extend DaysTillExpire = datetime_diff("Day", SecretExpire, now())
+| project Resource,SecretName,DaysTillExpire
+```
+
+# Azure Resource Graph KQL queries
 
 ## Azure Portal KQL
 * [What is Azure Resource Graph?](https://docs.microsoft.com/en-us/azure/governance/resource-graph/overview)
