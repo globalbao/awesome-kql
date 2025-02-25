@@ -31,19 +31,6 @@ AzureDiagnostics
 * [Graph Query Language](https://docs.microsoft.com/en-us/azure/governance/resource-graph/concepts/query-language)
 * [Kusto Overview](https://docs.microsoft.com/en-us/azure/data-explorer/kusto/query/)
 
-**Current Scope:**
-* resource groups
-* virtual machines
-* public ip addresses
-* load balancers
-* sql databases
-* expressroute
-* web server farms / app services
-* network security group rules
-* disks
-* security assessments
-* azure policy
-
 ### :star: All Resources
 
 #### Count `all resources` summarizing by `count` and ordering by `count`
@@ -212,6 +199,21 @@ securityresources
 | extend userImpact = tostring(properties.metadata.userImpact)
 | distinct name, description, displayName, severity, remediationDescription, policyDefinitionId, implementationEffort, userImpact
 ```
+
+### Query `microsoft.security/softwareinventories` where there are known vulnerabilities
+
+```
+securityresources
+| where type == 'microsoft.security/softwareinventories'
+| extend numberOfKnownVulnerabilities = properties.numberOfKnownVulnerabilities
+| extend softwareName = properties.softwareName
+| extend softwareVersion = properties.version
+| extend softwareVendor = properties.vendor
+| extend virtualMachine = properties.azureVmId
+| extend operatingSystem = properties.osPlatform
+| where numberOfKnownVulnerabilities > 0
+```
+
 
 ## :star: Azure Policy
 
