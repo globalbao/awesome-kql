@@ -200,6 +200,8 @@ securityresources
 | distinct name, description, displayName, severity, remediationDescription, policyDefinitionId, implementationEffort, userImpact
 ```
 
+## :star: Software Inventories
+
 ### Query `microsoft.security/softwareinventories` where there are known vulnerabilities
 
 ```
