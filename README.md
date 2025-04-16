@@ -174,7 +174,7 @@ Resources
 
 ### Query `microsoft.compute/disks`
 
-```
+```kql
 resources
 | where type == "microsoft.compute/disks"
 | extend diskSizeGB = tostring(properties.diskSizeGB)
@@ -187,7 +187,7 @@ resources
 
 ### Query `microsoft.security/assessments` and show distinct values
 
-```
+```kql
 securityresources
 | where type == "microsoft.security/assessments"
 | extend description = tostring(properties.metadata.description)
@@ -204,7 +204,7 @@ securityresources
 
 ### Query `microsoft.security/softwareinventories` where there are known vulnerabilities
 
-```
+```kql
 securityresources
 | where type == 'microsoft.security/softwareinventories'
 | extend numberOfKnownVulnerabilities = properties.numberOfKnownVulnerabilities
@@ -221,7 +221,7 @@ securityresources
 
 ### Query `policy states` filtering on `'NonCompliant'` results
 
-```
+```kql
 policyresources
 | where type == "microsoft.policyinsights/policystates"
 | where properties.complianceState == 'NonCompliant'
@@ -250,7 +250,7 @@ timestamp = tostring(properties.timestamp)
 
 ### Query `Azure Security Benchmark` compliance across all subscriptions
 
-```
+```kql
 // Regulatory compliance CSV report query for standard "Azure Security Benchmark" 
 // Change the 'complianceStandardId' column condition to select a different standard
     securityresources
