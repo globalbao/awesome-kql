@@ -13,23 +13,25 @@ Get in touch :octocat:
 ### :star: Key Vault
 
 #### Search for expiring Key Vault secrets and calculate Days till Expiry
+Source: [Microsoft Learn: Azure Key Vault as an Event Grid source](https://learn.microsoft.com/en-us/azure/event-grid/event-schema-key-vault)
+
 ```kql
 AzureDiagnostics
 | where ResourceProvider == 'MICROSOFT.KEYVAULT'
 | where OperationName == 'SecretNearExpiryEventGridNotification'
 | extend SecretExpire = unixtime_seconds_todatetime(eventGridEventProperties_data_EXP_d)
 | extend SecretName = eventGridEventProperties_data_ObjectName_s
-| extend DaysTillExpire = datetime_diff("Day", SecretExpire, now())
+| extend DaysTillExpire = datetime_diff("day", SecretExpire, now())
 | project Resource,SecretName,DaysTillExpire
 ```
 
 # Azure Resource Graph KQL queries
 
 ## Azure Portal KQL
-* [What is Azure Resource Graph?](https://docs.microsoft.com/en-us/azure/governance/resource-graph/overview)
-* [Starter Resource Graph query samples](https://docs.microsoft.com/en-us/azure/governance/resource-graph/samples/starter?tabs=azure-cli)
-* [Graph Query Language](https://docs.microsoft.com/en-us/azure/governance/resource-graph/concepts/query-language)
-* [Kusto Overview](https://docs.microsoft.com/en-us/azure/data-explorer/kusto/query/)
+* [What is Azure Resource Graph?](https://learn.microsoft.com/en-us/azure/governance/resource-graph/overview)
+* [Starter Resource Graph query samples](https://learn.microsoft.com/en-us/azure/governance/resource-graph/samples/starter)
+* [Graph Query Language](https://learn.microsoft.com/en-us/azure/governance/resource-graph/concepts/query-language)
+* [Kusto Query Language reference](https://learn.microsoft.com/en-us/kusto/query/)
 
 ### :star: All Resources
 
@@ -46,7 +48,7 @@ Resources
 ```kql
 resourcecontainers
 | where type == "microsoft.resources/subscriptions/resourcegroups"
-| where tags !contains 'costcentre'
+| where isnull(tags['costcentre'])
 | project name, resourceGroup, subscriptionId, location, tags
 | summarize count () by subscriptionId
 ```
@@ -55,7 +57,7 @@ resourcecontainers
 ```kql
 resourcecontainers
 | where type == "microsoft.resources/subscriptions/resourcegroups"
-| where tags !contains 'application'
+| where isnull(tags['application'])
 | project name, resourceGroup, subscriptionId, location, tags
 | summarize count () by subscriptionId
 ```
@@ -72,12 +74,12 @@ resourcecontainers
 ```kql
 resourcecontainers
 | where type == "microsoft.resources/subscriptions/resourcegroups"
-| mvexpand parsejson(tags)
+| mv-expand tags
 | extend tagname = tostring(bag_keys(tags)[0])
 | extend tagvalue = tostring(tags[tagname])
 | project  name,id,type,location,subscriptionId,tagname,tagvalue
 | union (resources 
-| mvexpand parsejson(tags)
+| mv-expand tags
 | extend tagname = tostring(bag_keys(tags)[0])
 | extend tagvalue = tostring(tags[tagname])
 | project name,id,type,location,subscriptionId,tagname,tagvalue)
@@ -97,7 +99,16 @@ Resources
 ### Query resources for a specific `publicIPAddress`
 ``` kql
 Resources
-| where type contains 'publicIPAddresses' and properties.ipAddress == "12.345.678.910"
+| where type contains 'publicIPAddresses' and properties.ipAddress == "203.0.113.10"
+```
+
+### Count public IP addresses with an assigned IP by subscription
+Source: [Microsoft Learn: Azure Resource Graph networking samples](https://learn.microsoft.com/en-us/azure/networking/resource-graph-samples)
+
+```kql
+Resources
+| where type contains 'publicIPAddresses' and isnotempty(properties.ipAddress)
+| summarize count() by subscriptionId
 ```
 
 ## :star: Load Balancers
@@ -151,7 +162,7 @@ resources
 ```kql
 Resources
 | where type =~ "microsoft.network/networksecuritygroups"
-| join kind=leftouter (ResourceContainers | where type=='microsoft.resources/subscriptions' | project SubcriptionName=name, subscriptionId) on subscriptionId
+| join kind=leftouter (ResourceContainers | where type=='microsoft.resources/subscriptions' | project SubscriptionName=name, subscriptionId) on subscriptionId
 | mv-expand rules=properties.securityRules
 | extend rule_name = tostring(rules.name)
 | extend direction = tostring(rules.properties.direction)
@@ -166,8 +177,59 @@ Resources
 | extend destport = rules.properties.destinationPortRange
 | extend destinationApplicationSecurityGroups = split((split(tostring(rules.properties.destinationApplicationSecurityGroups), '/'))[8], '"')[0]
 | extend subnet_name = split((split(tostring(properties.subnets), '/'))[10], '"')[0]
-| project SubcriptionName, resourceGroup, subnet_name, name, rule_name, direction, priority, access, description, protocol, sourceport, sourceprefix, sourceApplicationSecurityGroups, destport, destprefix, destinationApplicationSecurityGroups
-| sort by SubcriptionName, resourceGroup, name asc, direction asc, priority asc
+| project SubscriptionName, resourceGroup, subnet_name, name, rule_name, direction, priority, access, description, protocol, sourceport, sourceprefix, sourceApplicationSecurityGroups, destport, destprefix, destinationApplicationSecurityGroups
+| sort by SubscriptionName, resourceGroup, name asc, direction asc, priority asc
+```
+
+### Query network security groups that are not associated with a NIC or subnet
+Source: [Microsoft Learn: Azure Resource Graph networking samples](https://learn.microsoft.com/en-us/azure/networking/resource-graph-samples)
+
+```kql
+Resources
+| where type =~ 'microsoft.network/networksecuritygroups'
+    and isnull(properties.networkInterfaces)
+    and isnull(properties.subnets)
+| project name, resourceGroup, subscriptionId
+| sort by name asc
+```
+
+## :star: Storage Accounts
+
+### Query storage accounts without HTTPS-only traffic enforcement
+Source: [Microsoft/azure-skills: Azure Resource Graph compliance queries](https://github.com/microsoft/azure-skills/blob/main/skills/azure-compliance/references/azure-resource-graph.md)
+
+```kql
+Resources
+| where type =~ 'microsoft.storage/storageaccounts'
+| where properties.supportsHttpsTrafficOnly == false
+| project name, resourceGroup, location
+```
+
+## :star: Virtual Machine Operating Systems
+
+### Count virtual machines by operating system
+Source: [Microsoft Learn: Starter Resource Graph query samples](https://learn.microsoft.com/en-us/azure/governance/resource-graph/samples/starter)
+
+```kql
+Resources
+| where type =~ 'microsoft.compute/virtualmachines'
+| summarize count() by tostring(properties.storageProfile.osDisk.osType)
+```
+
+## :star: Resource Group Locks
+
+### Query resource groups without a directly scoped management lock
+Source: [Microsoft/azure-skills: Azure Resource Graph compliance queries](https://github.com/microsoft/azure-skills/blob/main/skills/azure-compliance/references/azure-resource-graph.md)
+
+```kql
+ResourceContainers
+| where type == 'microsoft.resources/subscriptions/resourcegroups'
+| project rgName = name, rgId = id
+| join kind=leftanti (
+    Resources
+    | where type == 'microsoft.authorization/locks'
+    | project rgId = tostring(properties.resourceId)
+) on rgId
 ```
 
 ## :star: Disks
@@ -207,7 +269,7 @@ securityresources
 ```kql
 securityresources
 | where type == 'microsoft.security/softwareinventories'
-| extend numberOfKnownVulnerabilities = properties.numberOfKnownVulnerabilities
+| extend numberOfKnownVulnerabilities = toint(properties.numberOfKnownVulnerabilities)
 | extend softwareName = properties.softwareName
 | extend softwareVersion = properties.version
 | extend softwareVendor = properties.vendor
@@ -224,7 +286,7 @@ securityresources
 ```kql
 policyresources
 | where type == "microsoft.policyinsights/policystates"
-| where properties.complianceState == 'NonCompliant'
+| where properties.complianceState == 'NonCompliant'
 | extend policyAssignmentParameters = todynamic(properties.policyAssignmentParameters),
 policyDefinitionAction = tostring(properties.policyDefinitionAction),
 policyAssignmentScope = tostring(properties.policyAssignmentScope),
@@ -337,49 +399,49 @@ Install-Module -Name Az.ResourceGraph
 $FilePath = "C:\Temp\"
 
 # Query resources, project away columns, and convert/export to JSON
-$resourceGroups = Search-AzGraph -Query "ResourceContainers | project-away resourceGroup,managedBy,tenantId,identity,zones,extendedLocation,sku,plan,properties,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\ResourceGroups.json
+$resourceGroups = Search-AzGraph -Query "ResourceContainers | project-away resourceGroup,managedBy,tenantId,identity,zones,extendedLocation,sku,plan,properties,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\ResourceGroups.json
 
-$virtualNetworks = Search-AzGraph -Query "Resources | where type == 'microsoft.network/virtualnetworks' | project-away managedBy,tenantId,identity,zones,extendedLocation,sku,plan,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\VirtualNetworks.json
+$virtualNetworks = Search-AzGraph -Query "Resources | where type == 'microsoft.network/virtualnetworks' | project-away managedBy,tenantId,identity,zones,extendedLocation,sku,plan,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\VirtualNetworks.json
 
-$redis = Search-AzGraph -Query "Resources | where type == 'microsoft.cache/redis' | project-away managedBy,tenantId,identity,zones,extendedLocation,sku,plan,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\Redis.json
+$redis = Search-AzGraph -Query "Resources | where type == 'microsoft.cache/redis' | project-away managedBy,tenantId,identity,zones,extendedLocation,sku,plan,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\Redis.json
 
-$availabilitySets = Search-AzGraph -Query "Resources | where type == 'microsoft.compute/availabilitysets' | project-away managedBy,tenantId,identity,zones,extendedLocation,sku,plan,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\AvailabilitySets.json
+$availabilitySets = Search-AzGraph -Query "Resources | where type == 'microsoft.compute/availabilitysets' | project-away managedBy,tenantId,identity,zones,extendedLocation,sku,plan,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\AvailabilitySets.json
 
-$disks = Search-AzGraph -Query "Resources | where type == 'microsoft.compute/disks' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\Disks.json
+$disks = Search-AzGraph -Query "Resources | where type == 'microsoft.compute/disks' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\Disks.json
 
-$virtualMachines = Search-AzGraph -Query "Resources | where type == 'microsoft.compute/virtualmachines' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,sku,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\VirtualMachines.json
+$virtualMachines = Search-AzGraph -Query "Resources | where type == 'microsoft.compute/virtualmachines' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,sku,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\VirtualMachines.json
 
-$virtualMachinesExtensions = Search-AzGraph -Query "Resources | where type == 'microsoft.compute/virtualmachines/extensions' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,sku,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\VirtualMachinesExtensions.json
+$virtualMachinesExtensions = Search-AzGraph -Query "Resources | where type == 'microsoft.compute/virtualmachines/extensions' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,sku,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\VirtualMachinesExtensions.json
 
-$virtualMachinesScaleSets = Search-AzGraph -Query "Resources | where type == 'microsoft.compute/virtualmachinescalesets' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\VirtualMachinesScaleSets.json
+$virtualMachinesScaleSets = Search-AzGraph -Query "Resources | where type == 'microsoft.compute/virtualmachinescalesets' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\VirtualMachinesScaleSets.json
 
-$managedClusters = Search-AzGraph -Query "Resources | where type == 'microsoft.containerservice/managedclusters' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\ManagedClusters.json
+$managedClusters = Search-AzGraph -Query "Resources | where type == 'microsoft.containerservice/managedclusters' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\ManagedClusters.json
 
-$dataFactories = Search-AzGraph -Query "Resources | where type == 'microsoft.datafactory/factories' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,sku,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\DataFactories.json
+$dataFactories = Search-AzGraph -Query "Resources | where type == 'microsoft.datafactory/factories' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,sku,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\DataFactories.json
 
-$appInsights = Search-AzGraph -Query "Resources | where type == 'microsoft.insights/components' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,sku,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\AppInsights.json
+$appInsights = Search-AzGraph -Query "Resources | where type == 'microsoft.insights/components' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,sku,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\AppInsights.json
 
-$keyVaults = Search-AzGraph -Query "Resources | where type == 'microsoft.keyvault/vaults' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,sku,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\KeyVaults.json
+$keyVaults = Search-AzGraph -Query "Resources | where type == 'microsoft.keyvault/vaults' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,sku,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\KeyVaults.json
 
-$applicationSecurityGroups = Search-AzGraph -Query "Resources | where type == 'microsoft.network/applicationsecuritygroups' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,sku,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\ApplicationSecurityGroups.json
+$applicationSecurityGroups = Search-AzGraph -Query "Resources | where type == 'microsoft.network/applicationsecuritygroups' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,sku,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\ApplicationSecurityGroups.json
 
-$loadBalancers = Search-AzGraph -Query "Resources | where type == 'microsoft.network/loadbalancers' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\LoadBalancers.json
+$loadBalancers = Search-AzGraph -Query "Resources | where type == 'microsoft.network/loadbalancers' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\LoadBalancers.json
 
-$networkInterfaces = Search-AzGraph -Query "Resources | where type == 'microsoft.network/networkinterfaces' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,sku,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\NetworkInterfaces.json
+$networkInterfaces = Search-AzGraph -Query "Resources | where type == 'microsoft.network/networkinterfaces' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,sku,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\NetworkInterfaces.json
 
-$publicIPAddresses = Search-AzGraph -Query "Resources | where type == 'microsoft.network/publicipaddresses' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\PublicIPAddresses.json
+$publicIPAddresses = Search-AzGraph -Query "Resources | where type == 'microsoft.network/publicipaddresses' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\PublicIPAddresses.json
 
-$searchServices = Search-AzGraph -Query "Resources | where type == 'microsoft.search/searchservices' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\SearchServices.json
+$searchServices = Search-AzGraph -Query "Resources | where type == 'microsoft.search/searchservices' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\SearchServices.json
 
-$serviceBusNamespaces = Search-AzGraph -Query "Resources | where type == 'microsoft.servicebus/namespaces' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\ServiceBusNamespaces.json
+$serviceBusNamespaces = Search-AzGraph -Query "Resources | where type == 'microsoft.servicebus/namespaces' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\ServiceBusNamespaces.json
 
-$sqlManagedInstances = Search-AzGraph -Query "Resources | where type == 'microsoft.sql/managedinstances' | project-away managedBy,tenantId,zones,extendedLocation,plan,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\SqlManagedInstances.json
+$sqlManagedInstances = Search-AzGraph -Query "Resources | where type == 'microsoft.sql/managedinstances' | project-away managedBy,tenantId,zones,extendedLocation,plan,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\SqlManagedInstances.json
 
-$storageAccounts = Search-AzGraph -Query "Resources | where type == 'microsoft.storage/storageaccounts' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\StorageAccounts.json
+$storageAccounts = Search-AzGraph -Query "Resources | where type == 'microsoft.storage/storageaccounts' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\StorageAccounts.json
 
-$webServerFarms = Search-AzGraph -Query "Resources | where type == 'microsoft.web/serverfarms' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\WebServerFarms.json
+$webServerFarms = Search-AzGraph -Query "Resources | where type == 'microsoft.web/serverfarms' | project-away managedBy,tenantId,identity,zones,extendedLocation,plan,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\WebServerFarms.json
 
-$webSites = Search-AzGraph -Query "Resources | where type == 'microsoft.web/sites' | project-away managedBy,tenantId,zones,extendedLocation,plan,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\WebSites.json
+$webSites = Search-AzGraph -Query "Resources | where type == 'microsoft.web/sites' | project-away managedBy,tenantId,zones,extendedLocation,plan,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\WebSites.json
 
-$notificationHubs = Search-AzGraph -Query "Resources | where type == 'microsoft.notificationhubs/namespaces/notificationhubs' or type == 'microsoft.notificationhubs/namespaces' | project-away managedBy,tenantId,zones,extendedLocation,plan,kind,type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\NotificationHubs.json
+$notificationHubs = Search-AzGraph -Query "Resources | where type == 'microsoft.notificationhubs/namespaces/notificationhubs' or type == 'microsoft.notificationhubs/namespaces' | project-away managedBy,tenantId,zones,extendedLocation,plan,['kind'],type,subscriptionId" | ConvertTo-Json -Depth 100 | Out-File $FilePath\NotificationHubs.json
 ```
